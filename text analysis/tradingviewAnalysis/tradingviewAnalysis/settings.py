@@ -14,12 +14,18 @@ BOT_NAME = 'tradingviewAnalysis'
 SPIDER_MODULES = ['tradingviewAnalysis.spiders']
 NEWSPIDER_MODULE = 'tradingviewAnalysis.spiders'
 
-
+#HTTPERROR_ALLOWED_CODES = [404]
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'tradingviewAnalysis (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
+
+# MongoDB info
+#MONGODB_SERVER = "localhost"
+#MONGODB_PORT = 27017
+#MONGODB_DB = "reddit"
+#MONGODB_COLLECTION = "post"
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
