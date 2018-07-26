@@ -2,6 +2,8 @@
 #coding:utf-8
 
 import requests
+import datetime
+import string
 from bs4 import BeautifulSoup
 
 def main():
@@ -88,15 +90,14 @@ def getPostInfo(startURL):
     # use bs4 to reveal the content with html
     soup = BeautifulSoup(r.text, 'html.parser')
 
-    # find next page url by css class
-    title = soup.select('h1.tv-chart-view__title-name.js-chart-view__name.apply-overflow-tooltip')[0].getText()
-    author = soup.select('span.tv-chart-view__title-user-name')[0].getText()
-    # can't get time stamp
-    timestamp = soup.select('span.tv-chart-view__title-time')
-    print title
-    print author
-    print timestamp
-    return title
+    # find post title by css class
+    title = str(soup.select('h1.tv-chart-view__title-name.js-chart-view__name.apply-overflow-tooltip')[0].getText().rstrip())
+    # find author name by css class
+    author = str(soup.select('span.tv-chart-view__title-user-name')[0].getText().rstrip())
+    # find time posted by css class
+    seconds = int(float(soup.select('span.tv-chart-view__title-time')[0].get('data-timestamp')))
+    timestamp = str(datetime.datetime.fromtimestamp(seconds))
+    return {'title':title, 'author':author, 'timestamp':timestamp}
 
 
 if __name__ == '__main__':
