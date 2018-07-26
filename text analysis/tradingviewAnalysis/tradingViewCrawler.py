@@ -48,7 +48,8 @@ def getAllPostsInPage(startURL):
     for ideaURL in ideaURLs:
         url = ideaURL.get('href')
         absoluteURL = requests.compat.urljoin(startURL, url)
-        URLs.append(absoluteURL)
+        #URLs.append(absoluteURL)
+        print getPostInfo(absoluteURL)
 
     return URLs
 
@@ -63,18 +64,39 @@ def getTotalPageNumber(startURL):
     # use bs4 to reveal the content with html
     soup = BeautifulSoup(r.text, 'html.parser')
 
-    #find next page url by css class
+    # find page urls by css class
     PageURLs = soup.select('a.tv-load-more__page')
-    nextPageURL = PageURLs[len(PageURLs) - 1].get('href')
-    startIndex = nextPageURL.find('page-')
-    totalPageNumber = nextPageURL[startIndex + 5:]
+    lastPageURL = PageURLs[len(PageURLs) - 1].get('href')
+    startIndex = lastPageURL.find('page-')
+
+    # find the page number in url
+    totalPageNumber = lastPageURL[startIndex + 5:]
     totalPageNumber = list(totalPageNumber)
     totalPageNumber[len(totalPageNumber) - 1] = ''
     totalPageNumber = ''.join(totalPageNumber)
+
     return int(totalPageNumber)
 
-def getPostInfo(startInfo):
+def getPostInfo(startURL):
+    # download content of cryptocurrencies at tradingview.com
+    r = requests.get(startURL)
 
+    # check if the content is valid or not
+    if r.status_code != requests.codes.ok:
+        return None
+    
+    # use bs4 to reveal the content with html
+    soup = BeautifulSoup(r.text, 'html.parser')
+
+    # find next page url by css class
+    title = soup.select('h1.tv-chart-view__title-name.js-chart-view__name.apply-overflow-tooltip')[0].getText()
+    author = soup.select('span.tv-chart-view__title-user-name')[0].getText()
+    # can't get time stamp
+    timestamp = soup.select('span.tv-chart-view__title-time')
+    print title
+    print author
+    print timestamp
+    return title
 
 
 if __name__ == '__main__':
