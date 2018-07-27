@@ -1,9 +1,12 @@
 #!/usr/bin/python
-#coding:utf-8
+# coding:utf-8
 
 import requests
 import datetime
 import string
+import lxml.html
+from selenium import webdiver
+from selenium.webdriver.common.keys import Keys
 from bs4 import BeautifulSoup
 
 def main():
@@ -52,6 +55,8 @@ def getAllPostsInPage(startURL):
         absoluteURL = requests.compat.urljoin(startURL, url)
         #URLs.append(absoluteURL)
         print getPostInfo(absoluteURL)
+        #print '=================================================================='
+        exit()
 
     return URLs
 
@@ -97,8 +102,44 @@ def getPostInfo(startURL):
     # find time posted by css class
     seconds = int(float(soup.select('span.tv-chart-view__title-time')[0].get('data-timestamp')))
     timestamp = str(datetime.datetime.fromtimestamp(seconds))
+
+    # scroll the page to buttom
+    # https://stackoverflow.com/questions/21006940/how-to-load-all-entries-in-an-infinite-scroll-at-once-to-parse-the-html-in-pytho
+    # check it to get reference
+    browser = webdriver.Chrome()
+    
+    #find comment info
+    allComments = soup.select('div.tv-chart-comment__wrap')
+    
+    for comment in allComments:
+        print getCommentInfo(comment)
+    
     return {'title':title, 'author':author, 'timestamp':timestamp}
 
+def getCommentInfo(tagString):
+    # get author name of comment
+    author = str(tagString.select('span.tv-chart-comment__user-name')[0].getText().strip())
+    # get comment time posted
+    seconds = int(float(tagString.select('span.tv-chart-comment__time')[0].get('data-timestamp')))
+    timestamp = str(datetime.datetime.fromtimestamp(seconds))
+    # get comment content
+    html = lxml.html.fromstring(tagString.select('div.tv-chart-comment__text')[0].getText())
+    content = lxml.html.tostring(html)
+    # remove the <p> tag
+    content = content[3:len(content)-4].strip()
+    # check if this comment is a reply or not
+    toWhom = None
+    if content[0] == '@':
+        toWhomEndIndex = content.find(',')
+        toWhom = content[1:toWhomEndIndex]
+        content = content[toWhomEndIndex + 1:]
+    # get agree number
+    agreeNumTag = tagString.select('span.tv-chart-comment__rating.js-chart-comment__agree.apply-common-tooltip.tv-chart-comment__rating--positive.tv-chart-comment__rating--button')
+    agreeNum = 0
+    if len(agreeNumTag) != 0:
+        agreeNum = int(agreeNumTag[0].getText().rstrip())
+
+    return {'author': author, 'timestamp': timestamp, 'content': content, '# of agree': agreeNum, 'toWhom': toWhom}
 
 if __name__ == '__main__':
     main()
