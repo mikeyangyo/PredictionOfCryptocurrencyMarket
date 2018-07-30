@@ -54,10 +54,10 @@ def getAllPostsInPage(startURL):
     for ideaURL in ideaURLs:
         url = ideaURL.get('href')
         absoluteURL = requests.compat.urljoin(startURL, url)
-        #URLs.append(absoluteURL)
+        URLs.append(absoluteURL)
+        print absoluteURL
         print getPostInfo(absoluteURL)
-        #print '=================================================================='
-        exit()
+        print '=================================================================='
 
     return URLs
 
@@ -105,17 +105,20 @@ def getPostInfo(startURL):
     timestamp = str(datetime.datetime.fromtimestamp(seconds))
 
     # scroll the page to buttom
-    #options = webdriver.ChromeOptions()
-    #options.add_argument('headless')
-    #browser = webdriver.Chrome(chrome_options = options)
     browser = webdriver.Chrome()
     browser.get(startURL)
     time.sleep(1)
     elem = browser.find_element_by_tag_name('body')
-    numOfPages = 20
-    for i in range(numOfPages):
-        elem.send_keys(Keys.PAGE_DOWN)
+
+    lastHeight = browser.execute_script("return document.body.scrollHeight")
+    while True:
+        browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(0.2)
+        newHeight = browser.execute_script("return document.body.scrollHeight")
+        if newHeight == lastHeight:
+            break
+        lastHeight = newHeight
+
     soup = BeautifulSoup(browser.page_source, 'html.parser')
 
     #find comment info
