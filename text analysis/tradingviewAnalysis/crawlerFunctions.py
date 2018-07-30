@@ -7,6 +7,7 @@ import time
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from bs4 import BeautifulSoup
+from utils import cryptocurrenciesAbbrev
 
 def getAllPostsInMarket(startURL, Date = None):
     curURL = startURL
@@ -16,7 +17,7 @@ def getAllPostsInMarket(startURL, Date = None):
 
     totalPage = getTotalPageNumber(startURL)
     print 'processing page 1...'
-    curURL = requests.compat.urljoin(curURL, '?sort=recent')
+    curURL = requests.compat.urljoin(curURL, '/?sort=recent')
     print curURL
     URLs, postInfos, continueFinding = getAllPostsInPage(curURL, Date)
     
@@ -32,7 +33,7 @@ def getAllPostsInMarket(startURL, Date = None):
         print 'processing ', pagePostfix, '...'
         absoluteNextPageURL = requests.compat.urljoin(startURL, pagePostfix)
         curURL = absoluteNextPageURL
-        curURL = requests.compat.urljoin(curURL, '?sort=recent')
+        curURL = requests.compat.urljoin(curURL, '/?sort=recent')
         print curURL
         URLs, postInfos, continueFinding = getAllPostsInPage(curURL, Date)
         
@@ -46,6 +47,7 @@ def getAllPostsInMarket(startURL, Date = None):
 
         allURLs.append(URLs)
         allPosts.append(postInfos)
+        print allPosts
 
     print allPosts
 
@@ -120,6 +122,14 @@ def getPostInfo(startURL, Date = None):
 
     # find post title by css class
     title = str(soup.select('h1.tv-chart-view__title-name.js-chart-view__name.apply-overflow-tooltip')[0].getText().rstrip())
+    # find cryptocurrencies type of post
+    cryptoTypeList = str(soup.select('a.tv-chart-view__symbol-link')[0].getText()).split('/')
+    cryptoTypeList = cryptocurrenciesAbbrev([i.strip() for i in cryptoTypeList])
+    # find label of post
+    labelList = soup.select('span.tv-chart-view__title-icons.js-chart-view__title-icons > span')
+    lebel = None
+    if len(labelList) != 0:
+        label = str(labelList[0].getText())
     # find author name by css class
     author = str(soup.select('span.tv-chart-view__title-user-name')[0].getText().rstrip())
     # find time posted by css class
@@ -152,12 +162,15 @@ def getPostInfo(startURL, Date = None):
     soup = BeautifulSoup(browser.page_source, 'html.parser')
 
     #find comment info
-    allComments = soup.select('div.tv-chart-comment__wrap')
-    for comment in allComments:
-        print getCommentInfo(comment)
+    allCommentList = soup.select('div.tv-chart-comment__wrap')
+    allComments = []
+    for commentList in allCommentList:
+        comments = getCommentInfo(commentList)
+        print comments
+        allComments.append(comments)
     
     browser.close()
-    return {'title':title, 'author':author, 'timestamp':str(timestamp)}, continueFinding
+    return {'title':title, 'label': label, 'crypto type': cryptoTypeList,'author':author, 'timestamp':str(timestamp), 'allcomments':allComments}, continueFinding
 
 def getCommentInfo(tagString):
     # get author name of comment
@@ -182,8 +195,8 @@ def getCommentInfo(tagString):
         # check if this comment is a reply or not
         if content[0] == '@':
             toWhomEndIndex = content.find(',')
-            toWhom = content[1:toWhomEndIndex]
-            content = content[toWhomEndIndex + 1:]
+            toWhom = str(content[1:toWhomEndIndex])
+            content = str(content[toWhomEndIndex + 1:])
     
     # get agree number
     agreeNumTag = tagString.select('span.tv-chart-comment__rating.js-chart-comment__agree.apply-common-tooltip.tv-chart-comment__rating--positive.tv-chart-comment__rating--button')
