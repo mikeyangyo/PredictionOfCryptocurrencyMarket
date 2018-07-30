@@ -8,28 +8,6 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from bs4 import BeautifulSoup
 
-def getMarkets():
-    # download content of cryptocurrencies at tradingview.com
-    r = requests.get('https://www.tradingview.com/markets/')
-
-    # check if the content is valid or not
-    if r.status_code != requests.codes.ok:
-        return None
-    
-    # use bs4 to reveal the content with html
-    soup = BeautifulSoup(r.text, 'html.parser')
-
-    #find idea title by css class
-    marketURLs = soup.select('h3.tv-site-widget__title.js-hotlists-dropdown > a')
-
-    markets = []
-    for marketURL in marketURLs:
-        targetURL = str(marketURL.get('href'))
-        splitlist = targetURL.split('/')
-        targetmarket = splitlist[2]
-        markets.append(targetmarket)
-    return markets
-
 def getAllPostsInMarket(startURL, Date = None):
     curURL = startURL
     curPage = 1
