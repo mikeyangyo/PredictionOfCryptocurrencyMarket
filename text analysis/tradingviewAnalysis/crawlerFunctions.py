@@ -8,30 +8,70 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from bs4 import BeautifulSoup
 
-def getAllPostsInMarket(startURL):
+def getMarkets():
+    # download content of cryptocurrencies at tradingview.com
+    r = requests.get('https://www.tradingview.com/markets/')
+
+    # check if the content is valid or not
+    if r.status_code != requests.codes.ok:
+        return None
+    
+    # use bs4 to reveal the content with html
+    soup = BeautifulSoup(r.text, 'html.parser')
+
+    #find idea title by css class
+    marketURLs = soup.select('h3.tv-site-widget__title.js-hotlists-dropdown > a')
+
+    markets = []
+    for marketURL in marketURLs:
+        targetURL = str(marketURL.get('href'))
+        splitlist = targetURL.split('/')
+        targetmarket = splitlist[2]
+        markets.append(targetmarket)
+    return markets
+
+def getAllPostsInMarket(startURL, Date = None):
     curURL = startURL
     curPage = 1
-    allResult = []
+    allURLs = []
+    allPosts = []
 
     totalPage = getTotalPageNumber(startURL)
     print 'processing page 1...'
-    result = getAllPostsInPage(curURL)
-    allResult.append(result)
+    curURL = requests.compat.urljoin(curURL, '?sort=recent')
+    print curURL
+    URLs, postInfos, continueFinding = getAllPostsInPage(curURL, Date)
+    
+    if continueFinding == False:
+        print 'No post can be crawl'
+        return None
+
+    allURLs.append(URLs)
+    allPosts.append(postInfos)
 
     for i in range(2, totalPage + 1):
         pagePostfix = 'page-' + str(i)
         print 'processing ', pagePostfix, '...'
         absoluteNextPageURL = requests.compat.urljoin(startURL, pagePostfix)
         curURL = absoluteNextPageURL
-
-        result = getAllPostsInPage(curURL)
-        if result in allResult:
-            print 'something error occured, the result is duplicated'
+        curURL = requests.compat.urljoin(curURL, '?sort=recent')
+        print curURL
+        URLs, postInfos, continueFinding = getAllPostsInPage(curURL, Date)
+        
+        if URLs in allURLs:
+            print 'Error: the URL was duplicated'
             break
         
-        allResult.append(result)
+        if postInfos == None and continueFinding == False:
+            print 'No post can be crawl'
+            break
 
-def getAllPostsInPage(startURL):    
+        allURLs.append(URLs)
+        allPosts.append(postInfos)
+
+    print allPosts
+
+def getAllPostsInPage(startURL, Date = None):    
     # download content of cryptocurrencies at tradingview.com
     r = requests.get(startURL)
 
@@ -46,15 +86,23 @@ def getAllPostsInPage(startURL):
     ideaURLs = soup.select('div.tv-site-widget.tv-widget-idea.js-widget-idea > div.tv-site-widget__body.tv-widget-idea.js-feed__item-minimizable-area.js-widget-body > a.tv-widget-idea__title.js-widget-idea__popup')
 
     URLs = []
+    postInfos = []
+    continueFinding = True
     for ideaURL in ideaURLs:
         url = ideaURL.get('href')
         absoluteURL = requests.compat.urljoin(startURL, url)
         URLs.append(absoluteURL)
         print absoluteURL
-        print getPostInfo(absoluteURL)
-        print '=================================================================='
+        postInfo, continueFinding = getPostInfo(absoluteURL, Date)
+        print postInfo
 
-    return URLs
+        if postInfo != None:
+            postInfos.append(postInfo)
+        print '=================================================================='
+    
+    if len(postInfos) == 0:
+        return URLs, None, continueFinding
+    return URLs, postInfos, continueFinding
 
 def getTotalPageNumber(startURL):
     # download content of cryptocurrencies at tradingview.com
@@ -80,7 +128,8 @@ def getTotalPageNumber(startURL):
 
     return int(totalPageNumber)
 
-def getPostInfo(startURL):
+def getPostInfo(startURL, Date = None):
+    continueFinding = True
     # download content of cryptocurrencies at tradingview.com
     r = requests.get(startURL)
 
@@ -97,7 +146,15 @@ def getPostInfo(startURL):
     author = str(soup.select('span.tv-chart-view__title-user-name')[0].getText().rstrip())
     # find time posted by css class
     seconds = int(float(soup.select('span.tv-chart-view__title-time')[0].get('data-timestamp')))
-    timestamp = str(datetime.datetime.fromtimestamp(seconds))
+    timestamp = datetime.datetime.fromtimestamp(seconds)
+
+    if Date != None:
+        print timestamp.date(), Date.date()
+        if timestamp.date() < Date.date():
+            continueFinding = False
+            return None, continueFinding
+        elif timestamp.date() > Date.date():
+            return None, continueFinding
 
     # scroll the page to buttom
     browser = webdriver.Chrome()
@@ -122,7 +179,7 @@ def getPostInfo(startURL):
         print getCommentInfo(comment)
     
     browser.close()
-    return {'title':title, 'author':author, 'timestamp':timestamp}
+    return {'title':title, 'author':author, 'timestamp':str(timestamp)}, continueFinding
 
 def getCommentInfo(tagString):
     # get author name of comment
