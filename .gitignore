@@ -102,3 +102,15 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# vscode
+.vscode/
+
+# user list file
+user_list.txt
+
+# account
+accounts.py
+
+# chromedriver
+chromedriver
