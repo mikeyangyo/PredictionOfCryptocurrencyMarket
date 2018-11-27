@@ -222,11 +222,11 @@ def getPostInfo(startURL, Date = None):
                 for commentList in allCommentList:
                     comments = getCommentInfo(commentList, idea_id=idea_id)
                     allComments.append(comments)
+                return {'title':title, 'label': label, 'crypto type': cryptoTypes, 'author': author, 'timestamp': timestamp, 'allcomments':allComments}, continueFinding
             else:
                 raise ProgrammingError
         
-    browser.close()
-    return {'title':title, 'label': label, 'crypto type': cryptoTypes, 'author': author, 'timestamp': timestamp, 'allcomments':allComments}, continueFinding
+     .close()
 
 def getCommentInfo(tagString, **kwargs):
     # get author name of comment
