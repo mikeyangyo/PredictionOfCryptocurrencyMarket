@@ -252,7 +252,9 @@ def getPostInfo(startURL, Date = None, **kwargs):
                     write_in_log(LOG_FILE, ['[{}] finish crawling comment of post {}\n'.format(get_now_time_string(), startURL)], lock=kwargs['lock'])
                     allComments.append(comments)
                 return {'title':title, 'label': label, 'crypto type': cryptoTypes, 'author': author, 'timestamp': timestamp, 'allcomments':allComments}, continueFinding
-
+            else:
+                raise ProgrammingError
+                
     browser.close()
     return None, continueFinding
 
